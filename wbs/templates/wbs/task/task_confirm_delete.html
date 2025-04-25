@@ -1,0 +1,20 @@
+{% extends 'wbs/base.html' %}
+
+{% block title %}Delete {{ task.title }} - WBS{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">Delete Task</h5>
+        <p class="card-text">
+            Are you sure you want to delete the task "{{ task.title }}"?
+            This action cannot be undone.
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <a href="{% url 'task_detail' project.pk task.pk %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

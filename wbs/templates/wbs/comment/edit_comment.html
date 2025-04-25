@@ -1,0 +1,35 @@
+{% extends 'wbs/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Edit Comment - WBS{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="mb-4">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'project_list' %}">Projects</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'project_detail' project.pk %}">{{ project.name }}</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'task_detail' project.pk task.pk %}">{{ task.title }}</a></li>
+                <li class="breadcrumb-item active">Edit Comment</li>
+            </ol>
+        </nav>
+    </div>
+    
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Edit Comment</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="mt-3">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="{% url 'task_detail' project_pk=project.pk pk=task.pk %}" class="btn btn-secondary">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %} 

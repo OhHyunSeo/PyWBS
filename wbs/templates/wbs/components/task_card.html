@@ -1,0 +1,30 @@
+{% load wbs_tags %}
+
+<div class="card task-card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5 class="task-title mb-1">
+                    <a href="{% url 'task_detail' project_pk=task.project.pk pk=task.pk %}">
+                        {{ task.title }}
+                    </a>
+                </h5>
+                <div class="task-meta mb-2">
+                    {% if task.start_date %}
+                    <span class="me-3"><i class="bi bi-calendar3"></i> {{ task.start_date|date }} - {{ task.end_date|date }}</span>
+                    {% endif %}
+                    {% if task.assignee %}
+                    <span><i class="bi bi-person"></i> {{ task.assignee.username }}</span>
+                    {% endif %}
+                </div>
+                {% progress_bar task.progress height="4px" %}
+            </div>
+            <div>
+                {% status_badge task.status %}
+            </div>
+        </div>
+        {% if task.description %}
+        <p class="card-text small text-muted mt-2">{{ task.description|truncatechars:100 }}</p>
+        {% endif %}
+    </div>
+</div> 

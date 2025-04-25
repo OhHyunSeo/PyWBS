@@ -1,0 +1,227 @@
+{% extends 'wbs/base.html' %}
+
+{% block title %}대시보드 - PyWBS{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-card {
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1.5rem;
+        transition: all 0.2s;
+    }
+    .dashboard-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    .card-header-custom {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        background-color: #fff;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    .stats-card {
+        text-align: center;
+        padding: 1.5rem;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-3px);
+    }
+    .stats-number {
+        font-size: 2rem;
+        font-weight: 600;
+    }
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        padding: 0.5rem 1rem;
+        border-bottom: 2px solid transparent;
+    }
+    .nav-tabs .nav-link.active {
+        color: #495057;
+        background-color: transparent;
+        border-bottom: 2px solid #0d6efd;
+    }
+    .task-item {
+        padding: 0.75rem 1rem;
+        border-left: 3px solid transparent;
+        margin-bottom: 0.5rem;
+        border-radius: 4px;
+        transition: all 0.1s;
+    }
+    .task-item:hover {
+        background-color: #f8f9fa;
+    }
+    .task-item.not-started { border-left-color: #dc3545; }
+    .task-item.in-progress { border-left-color: #ffc107; }
+    .task-item.completed { border-left-color: #198754; }
+    .task-item.blocked { border-left-color: #6c757d; }
+    .view-all {
+        font-size: 0.875rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>내 작업공간</h1>
+        <div>
+            <a href="{% url 'project_list' %}" class="btn btn-outline-primary me-2">모든 프로젝트</a>
+            <a href="{% url 'task_list' %}" class="btn btn-outline-secondary">모든 태스크</a>
+        </div>
+    </div>
+
+    <!-- 요약 통계 카드 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="stats-card bg-primary bg-opacity-10">
+                <div class="stats-number text-primary">{{ project_stats.total }}</div>
+                <div class="text-muted">전체 프로젝트</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card bg-success bg-opacity-10">
+                <div class="stats-number text-success">{{ project_stats.completed }}</div>
+                <div class="text-muted">완료된 프로젝트</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card bg-warning bg-opacity-10">
+                <div class="stats-number text-warning">{{ project_stats.in_progress }}</div>
+                <div class="text-muted">진행 중인 프로젝트</div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="stats-card bg-danger bg-opacity-10">
+                <div class="stats-number text-danger">{{ task_stats.blocked }}</div>
+                <div class="text-muted">차단된 태스크</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 내 태스크 -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <div class="card-header-custom">
+                    <h5 class="mb-0">내게 할당된 태스크</h5>
+                    <a href="{% url 'task_list' %}" class="view-all">모두 보기 →</a>
+                </div>
+                <div class="card-body">
+                    <ul class="nav nav-tabs mb-3">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#upcoming">예정된 태스크</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#blocked">차단된 태스크</a>
+                        </li>
+                    </ul>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="upcoming">
+                            {% for task in my_tasks %}
+                            <div class="task-item {{ task.status }}">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-1">{{ task.title }}</h6>
+                                        <small class="text-muted">{{ task.project.name }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge {% if task.status == 'completed' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% elif task.status == 'blocked' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                            {{ task.get_status_display }}
+                                        </span>
+                                        <small class="d-block text-muted">{{ task.end_date|date:"M d" }}</small>
+                                    </div>
+                                </div>
+                                <div class="progress mt-2" style="height: 4px;">
+                                    <div class="progress-bar" role="progressbar" style="width: {{ task.progress }}%" aria-valuenow="{{ task.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">할당된 태스크가 없습니다.</p>
+                            {% endfor %}
+                        </div>
+                        <div class="tab-pane fade" id="blocked">
+                            {% for task in recent_blocked_tasks %}
+                            <div class="task-item blocked">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="mb-1">{{ task.title }}</h6>
+                                        <small class="text-muted">{{ task.project.name }}</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-secondary">차단됨</span>
+                                        <small class="d-block text-muted">{{ task.end_date|date:"M d" }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% empty %}
+                            <p class="text-muted">차단된 태스크가 없습니다.</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 최근 프로젝트 -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <div class="card-header-custom">
+                    <h5 class="mb-0">최근 프로젝트</h5>
+                    <a href="{% url 'project_list' %}" class="view-all">모두 보기 →</a>
+                </div>
+                <div class="card-body">
+                    {% for project in recent_projects %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <h6 class="mb-0">
+                                <a href="{% url 'project_detail' project.pk %}" class="text-decoration-none">{{ project.name }}</a>
+                            </h6>
+                            <small class="text-muted">{{ project.updated_at|date:"M d, Y" }}</small>
+                        </div>
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar" role="progressbar" style="width: {{ project.progress }}%" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                        </div>
+                        <small class="text-muted">진행률: {{ project.progress }}%</small>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">프로젝트가 없습니다.</p>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <!-- 마감일 임박한 태스크 -->
+            <div class="dashboard-card">
+                <div class="card-header-custom">
+                    <h5 class="mb-0">마감이 임박한 태스크</h5>
+                </div>
+                <div class="card-body">
+                    {% for task in upcoming_tasks %}
+                    <div class="task-item {{ task.status }}">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <h6 class="mb-1">{{ task.title }}</h6>
+                                <small class="text-muted">{{ task.project.name }}</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge {% if task.status == 'completed' %}bg-success{% elif task.status == 'in_progress' %}bg-warning{% elif task.status == 'blocked' %}bg-secondary{% else %}bg-danger{% endif %}">
+                                    {{ task.get_status_display }}
+                                </span>
+                                <small class="d-block text-muted">{{ task.end_date|date:"M d" }}</small>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">마감이 임박한 태스크가 없습니다.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

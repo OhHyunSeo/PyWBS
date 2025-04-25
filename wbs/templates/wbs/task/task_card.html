@@ -1,0 +1,58 @@
+{% load static %}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+                <h5 class="card-title mb-1">
+                    <a href="{% url 'task_detail' project.pk task.pk %}" class="text-decoration-none">
+                        {{ task.title }}
+                    </a>
+                </h5>
+                <p class="text-muted small mb-0">
+                    {% if task.assignee %}
+                        Assigned to: {{ task.assignee.username }}
+                    {% else %}
+                        Unassigned
+                    {% endif %}
+                </p>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-link" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'task_detail' project.pk task.pk %}">
+                            <i class="bi bi-pencil"></i> Edit
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item text-danger" href="{% url 'task_delete' project.pk task.pk %}">
+                            <i class="bi bi-trash"></i> Delete
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <p class="card-text">{{ task.description|truncatewords:50 }}</p>
+
+        <div class="progress mb-2">
+            <div class="progress-bar" role="progressbar" style="width: {{ task.progress }}%">
+                {{ task.progress }}%
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="small text-muted">
+                {{ task.start_date|date }} - {{ task.end_date|date }}
+            </div>
+            <div>
+                <span class="badge bg-info">
+                    <i class="bi bi-chat"></i> {{ task.comments.count }}
+                </span>
+            </div>
+        </div>
+    </div>
+</div> 

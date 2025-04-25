@@ -1,0 +1,151 @@
+{% extends 'wbs/base.html' %}
+
+{% block title %}All Tasks - PyWBS{% endblock %}
+
+{% block extra_css %}
+<style>
+.stats-card {
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    transition: transform 0.2s;
+}
+.stats-card:hover {
+    transform: translateY(-5px);
+}
+.stats-number {
+    font-size: 2rem;
+    font-weight: 600;
+}
+.task-card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+    margin-bottom: 1rem;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.task-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+.task-card-header {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #eee;
+}
+.task-status-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+.status-completed {
+    background-color: #e3fcef;
+    color: #0a6245;
+}
+.status-in_progress {
+    background-color: #fff8e6;
+    color: #946c00;
+}
+.status-not_started {
+    background-color: #f1f3f5;
+    color: #495057;
+}
+.status-blocked {
+    background-color: #ffebee;
+    color: #c62828;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">All Tasks</h1>
+    </div>
+
+    <!-- 상태별 통계 카드 -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <a href="{% url 'task_list' %}{% if active_filter != 'all' %}?status=all{% endif %}" class="text-decoration-none">
+                <div class="stats-card bg-light text-center">
+                    <div class="stats-number">{{ not_started_tasks|add:in_progress_tasks|add:completed_tasks|add:blocked_tasks }}</div>
+                    <div class="text-muted">All Tasks</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{% url 'task_list' %}?status=completed" class="text-decoration-none">
+                <div class="stats-card bg-success bg-opacity-10 text-center">
+                    <div class="stats-number text-success">{{ completed_tasks }}</div>
+                    <div class="text-muted">Completed</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{% url 'task_list' %}?status=in_progress" class="text-decoration-none">
+                <div class="stats-card bg-warning bg-opacity-10 text-center">
+                    <div class="stats-number text-warning">{{ in_progress_tasks }}</div>
+                    <div class="text-muted">In Progress</div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-3">
+            <a href="{% url 'task_list' %}?status=blocked" class="text-decoration-none">
+                <div class="stats-card bg-danger bg-opacity-10 text-center">
+                    <div class="stats-number text-danger">{{ blocked_tasks }}</div>
+                    <div class="text-muted">Blocked</div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <!-- 태스크 목록 -->
+    <div class="row">
+        {% for task in tasks %}
+        <div class="col-md-6 col-lg-4 mb-4">
+            <div class="task-card border">
+                <div class="task-card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ task.title }}</h5>
+                    <span class="task-status-badge status-{{ task.status }}">{{ task.get_status_display }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <small class="text-muted d-block mb-1">Project: <a href="{% url 'project_detail' task.project.pk %}" class="text-decoration-none">{{ task.project.name }}</a></small>
+                        {% if task.parent %}
+                        <small class="text-muted d-block mb-1">Parent Task: {{ task.parent.title }}</small>
+                        {% endif %}
+                        {% if task.assignee %}
+                        <small class="text-muted d-block mb-1">Assignee: {{ task.assignee.username }}</small>
+                        {% endif %}
+                        <small class="text-muted d-block mb-1">
+                            {% if task.start_date %}
+                            {{ task.start_date|date }} - {{ task.end_date|date }}
+                            {% else %}
+                            No dates set
+                            {% endif %}
+                        </small>
+                        <small class="text-muted d-block">Updated: {{ task.updated_at|date:"M d, Y" }}</small>
+                    </div>
+
+                    <div class="progress mb-2" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar" style="width: {{ task.progress }}%" aria-valuenow="{{ task.progress }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Progress: {{ task.progress }}%</small>
+                        <a href="{% url 'task_detail' project_pk=task.project.pk pk=task.pk %}" class="btn btn-sm btn-outline-primary">View Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                No tasks found. 
+                {% if active_filter != 'all' %}
+                <a href="{% url 'task_list' %}" class="alert-link">Show all tasks</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

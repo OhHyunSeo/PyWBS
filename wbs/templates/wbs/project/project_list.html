@@ -1,0 +1,269 @@
+{% extends 'wbs/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Project List - WBS{% endblock %}
+
+{% block extra_css %}
+<style>
+.project-header {
+    padding-bottom: 1.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #eaeaea;
+}
+.project-card {
+    border-radius: 8px;
+    transition: all 0.2s;
+    border: 1px solid #eaeaea;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+.project-card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+.project-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.project-title a {
+    color: #333;
+    text-decoration: none;
+}
+.project-title a:hover {
+    text-decoration: underline;
+}
+.project-meta {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+.stats-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+.stats-card {
+    flex: 1;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.stats-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+.stats-number {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+.stats-label {
+    color: #6c757d;
+    font-size: 0.875rem;
+}
+.progress {
+    height: 0.375rem;
+    border-radius: 2px;
+}
+.projects-container {
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 1.5rem;
+}
+.project-list-header {
+    padding-bottom: 1rem;
+    margin-bottom: 1rem;
+    border-bottom: 1px solid #eaeaea;
+    font-weight: 600;
+}
+.order-column {
+    width: 50px;
+    text-align: center;
+}
+.progress-column {
+    width: 150px;
+}
+.date-column {
+    width: 170px;
+}
+.progress-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.progress-value {
+    margin-top: 4px;
+    font-size: 0.8rem;
+}
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 8px;
+}
+.status-not-started {
+    background-color: #dc3545;
+}
+.status-in-progress {
+    background-color: #ffc107;
+}
+.status-completed {
+    background-color: #198754;
+}
+.date-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    background-color: #f1f3f5;
+}
+.progress-mini {
+    width: 100%;
+    height: 6px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="project-header d-flex justify-content-between align-items-center">
+        <h2 class="mb-0">
+            Projects
+            {% if active_filter != 'all' %}
+                <small class="text-muted">
+                    (Filtered: 
+                    {% if active_filter == 'completed' %}Completed
+                    {% elif active_filter == 'in_progress' %}In Progress
+                    {% elif active_filter == 'not_started' %}Not Started
+                    {% endif %})
+                </small>
+                <a href="{% url 'project_list' %}" class="btn btn-sm btn-outline-secondary ms-2">Clear Filter</a>
+            {% endif %}
+        </h2>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+            <i class="bi bi-plus"></i> New Project
+        </button>
+    </div>
+
+    <div class="stats-header">
+        <div class="stats-card {% if active_filter == 'in_progress' %}border border-primary{% endif %}" id="in-progress-card">
+            <div class="stats-number text-warning">{{ in_progress_projects }}</div>
+            <div class="stats-label">In Progress</div>
+        </div>
+        <div class="stats-card {% if active_filter == 'completed' %}border border-primary{% endif %}" id="completed-card">
+            <div class="stats-number text-success">{{ completed_projects }}</div>
+            <div class="stats-label">Completed</div>
+        </div>
+        <div class="stats-card {% if active_filter == 'not_started' %}border border-primary{% endif %}" id="not-started-card">
+            <div class="stats-number text-secondary">{{ not_started_projects }}</div>
+            <div class="stats-label">Not Started</div>
+        </div>
+    </div>
+
+    <div class="projects-container">
+        <div class="project-list-header d-flex">
+            <div class="order-column">#</div>
+            <div class="flex-grow-1">Project Name</div>
+            <div class="progress-column">Progress</div>
+            <div class="date-column">Timeline</div>
+            <div style="width: 70px">Actions</div>
+        </div>
+        
+        {% for project in projects %}
+        <div class="project-card p-3">
+            <div class="d-flex align-items-center mb-2">
+                <div class="order-column">{{ forloop.counter }}</div>
+                <div class="flex-grow-1">
+                    <h5 class="project-title mb-1">
+                        <a href="{% url 'project_detail' project.pk %}">
+                            {{ project.name }}
+                        </a>
+                    </h5>
+                    <div class="project-meta">
+                        <span><i class="bi bi-person"></i> {{ project.owner.username }}</span>
+                        <span class="ms-3"><i class="bi bi-calendar3"></i> Created {{ project.created_at|date }}</span>
+                    </div>
+                </div>
+                <div class="progress-column">
+                    <div class="progress-container">
+                        <div class="progress-mini w-100">
+                            <div class="progress-bar" role="progressbar" aria-valuenow="{{ project.progress }}" aria-valuemin="0" aria-valuemax="100" style="width: {{ project.progress }}%"></div>
+                        </div>
+                        <span class="progress-value">{{ project.progress }}%</span>
+                    </div>
+                </div>
+                <div class="date-column">
+                    <span class="date-badge me-1">
+                        <i class="bi bi-calendar3-event"></i> {{ project.start_date|date:"M d" }}
+                    </span>
+                    -
+                    <span class="date-badge ms-1">
+                        <i class="bi bi-calendar3-event"></i> {{ project.end_date|date:"M d" }}
+                    </span>
+                </div>
+                <div style="width: 70px" class="text-end">
+                    <a href="{% url 'project_detail' project.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <i class="bi bi-folder-plus" style="font-size: 3rem; color: #dee2e6;"></i>
+            </div>
+            <h5 class="mb-3">No projects yet</h5>
+            <p class="text-muted mb-4">Create your first project to get started!</p>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newProjectModal">
+                <i class="bi bi-plus"></i> Create Project
+            </button>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal fade" id="newProjectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">New Project</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post">
+                <div class="modal-body">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Project</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 진행 상태별 프로젝트 카드 클릭 이벤트 처리
+    document.getElementById('in-progress-card').addEventListener('click', function() {
+        window.location.href = "{% url 'project_list' %}?status=in_progress";
+    });
+    
+    document.getElementById('completed-card').addEventListener('click', function() {
+        window.location.href = "{% url 'project_list' %}?status=completed";
+    });
+    
+    document.getElementById('not-started-card').addEventListener('click', function() {
+        window.location.href = "{% url 'project_list' %}?status=not_started";
+    });
+});
+</script>
+{% endblock %}
